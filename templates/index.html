@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>City Breath | 城市的呼吸</title>
+    <meta name="description" content="將空氣品質數據轉化為有機年輪的視覺化藝術。每一圈年輪都是城市呼吸的痕跡。">
+
+    <!-- Tailwind CSS 3.4 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'aqi-good': '#00E400',
+                        'aqi-moderate': '#FFFF00',
+                        'aqi-unhealthy-sensitive': '#FF7E00',
+                        'aqi-unhealthy': '#FF0000',
+                        'aqi-very-unhealthy': '#8F3F97',
+                        'aqi-hazardous': '#7E0023',
+                    },
+                    fontFamily: {
+                        'serif': ['Noto Serif TC', 'serif'],
+                        'mono': ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Noto Serif TC', serif;
+            background: #FFFFFF;
+            color: #000000;
+        }
+        .gauge-circle {
+            transform-origin: center;
+            transform: rotate(-90deg);
+            animation: gaugeAnim 1s ease-out forwards;
+        }
+        @keyframes gaugeAnim {
+            from { stroke-dashoffset: 283; }
+        }
+        .divider {
+            border-left: 1px solid #E5E5E5;
+        }
+        .section-divider {
+            border-top: 1px solid #E5E5E5;
+        }
+        [data-tabular] {
+            font-variant-numeric: tabular-nums;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Main Grid: 50/50 Split -->
+    <div class="min-h-screen grid grid-cols-1 lg:grid-cols-2">
+        <!-- Left Half: Tree Rings + Legend -->
+        <div class="p-8 lg:p-12 flex flex-col justify-center">
+            <!-- Title -->
+            <div class="mb-8 lg:mb-12">
+                <h1 class="text-4xl lg:text-5xl font-light tracking-tight mb-3">城市的呼吸</h1>
+                <p class="text-sm text-neutral-500 font-light tracking-wide uppercase">City Breath</p>
+            </div>
+
+            <!-- Tree Rings Canvas -->
+            <div class="mb-8 lg:mb-10">
+                <div class="relative aspect-square max-w-lg mx-auto border border-neutral-200 overflow-hidden bg-neutral-50/50">
+                    <canvas id="rings-canvas" class="w-full h-full"></canvas>
+
+                    <!-- 中心資訊 -->
+                    <div id="center-info" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none opacity-0 transition-opacity duration-500">
+                        <div class="bg-white/90 backdrop-blur-sm rounded-full px-6 py-4 shadow-sm">
+                            <div id="current-aqi" class="text-5xl lg:text-6xl font-light font-mono" data-tabular></div>
+                            <div id="current-status" class="text-sm text-neutral-600 mt-1 font-light"></div>
+                        </div>
+                    </div>
+
+                    <!-- 載入狀態 -->
+                    <div id="loading" class="absolute inset-0 flex items-center justify-center bg-white/90">
+                        <div class="text-center">
+                            <div class="w-10 h-10 border border-neutral-300 border-t-neutral-600 rounded-full animate-spin mx-auto mb-4"></div>
+                            <p class="text-neutral-500 text-sm font-light">正在監聽城市的呼吸...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="max-w-lg mx-auto w-full">
+                <div class="section-divider pt-6 mb-5">
+                    <h3 class="text-xs uppercase tracking-widest text-neutral-400 mb-4 font-light">圖例說明</h3>
+                </div>
+                <div class="grid grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 border border-neutral-300 rounded-full bg-aqi-good"></span>
+                        <span class="font-light text-neutral-600">良好</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 border border-neutral-300 rounded-full bg-aqi-moderate"></span>
+                        <span class="font-light text-neutral-600">普通</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 border border-neutral-300 rounded-full bg-aqi-unhealthy-sensitive"></span>
+                        <span class="font-light text-neutral-600">敏感</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 border border-neutral-300 rounded-full bg-aqi-unhealthy"></span>
+                        <span class="font-light text-neutral-600">不健康</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 border border-neutral-300 rounded-full bg-aqi-very-unhealthy"></span>
+                        <span class="font-light text-neutral-600">非常不健康</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 border border-neutral-300 rounded-full bg-aqi-hazardous"></span>
+                        <span class="font-light text-neutral-600">危害</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Half: Info Panels -->
+        <div class="divider p-8 lg:p-12 bg-neutral-50/30">
+            <!-- Station Select -->
+            <div class="mb-8 lg:mb-10">
+                <div class="flex items-baseline justify-between mb-3">
+                    <h2 class="text-xs uppercase tracking-widest text-neutral-400 font-light">監測站點</h2>
+                    <span class="text-xs text-neutral-400">
+                        <span class="font-light">資料時間</span>
+                        <span id="data-time" class="font-mono ml-1">--</span>
+                    </span>
+                </div>
+                <select id="station-select" class="w-full max-w-xs bg-white border border-neutral-200 px-4 py-2.5 text-lg font-light focus:outline-none focus:ring-1 focus:ring-neutral-300">
+                    <option value="{{ default_station }}">{{ default_station }}</option>
+                </select>
+            </div>
+
+            <!-- Real-time Data with Gauges -->
+            <div class="mb-8 lg:mb-10 section-divider pt-8">
+                <h2 class="text-xs uppercase tracking-widest text-neutral-400 mb-8 font-light">即時數據</h2>
+
+                <div class="space-y-6 lg:space-y-8">
+                    <!-- AQI -->
+                    <div class="flex items-center gap-5 lg:gap-6">
+                        <svg viewBox="0 0 100 100" class="w-20 h-20 lg:w-24 lg:h-24 flex-shrink-0">
+                            <circle cx="50" cy="50" r="45" fill="none" stroke="#E5E5E5" stroke-width="2"/>
+                            <circle id="gauge-aqi" cx="50" cy="50" r="45" fill="none" stroke="#000000" stroke-width="2"
+                                    stroke-dasharray="283" stroke-dashoffset="283" class="gauge-circle"/>
+                            <text x="50" y="50" text-anchor="middle" class="text-3xl font-light fill-black font-mono" id="gauge-aqi-text">--</text>
+                            <text x="50" y="66" text-anchor="middle" class="text-[10px] fill-neutral-500 uppercase tracking-wider">AQI</text>
+                        </svg>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-semibold mb-1.5">空氣品質指標</h3>
+                            <p class="text-xs text-neutral-500 leading-relaxed font-light">數字越高空氣越差，超過 100 應減少戶外運動</p>
+                        </div>
+                    </div>
+
+                    <!-- PM2.5 -->
+                    <div class="flex items-center gap-5 lg:gap-6">
+                        <svg viewBox="0 0 100 100" class="w-20 h-20 lg:w-24 lg:h-24 flex-shrink-0">
+                            <circle cx="50" cy="50" r="45" fill="none" stroke="#E5E5E5" stroke-width="2"/>
+                            <circle id="gauge-pm25" cx="50" cy="50" r="45" fill="none" stroke="#000000" stroke-width="2"
+                                    stroke-dasharray="283" stroke-dashoffset="283" class="gauge-circle"/>
+                            <text x="50" y="48" text-anchor="middle" class="text-2xl font-light fill-black font-mono" id="gauge-pm25-text">--</text>
+                            <text x="50" y="64" text-anchor="middle" class="text-[10px] fill-neutral-500">μg/m³</text>
+                        </svg>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-semibold mb-1.5">PM2.5 細懸浮微粒</h3>
+                            <p class="text-xs text-neutral-500 leading-relaxed font-light">會進入肺部血液，長期增加心血管疾病風險</p>
+                        </div>
+                    </div>
+
+                    <!-- PM10 -->
+                    <div class="flex items-center gap-5 lg:gap-6">
+                        <svg viewBox="0 0 100 100" class="w-20 h-20 lg:w-24 lg:h-24 flex-shrink-0">
+                            <circle cx="50" cy="50" r="45" fill="none" stroke="#E5E5E5" stroke-width="2"/>
+                            <circle id="gauge-pm10" cx="50" cy="50" r="45" fill="none" stroke="#000000" stroke-width="2"
+                                    stroke-dasharray="283" stroke-dashoffset="283" class="gauge-circle"/>
+                            <text x="50" y="50" text-anchor="middle" class="text-3xl font-light fill-black font-mono" id="gauge-pm10-text">--</text>
+                            <text x="50" y="66" text-anchor="middle" class="text-[10px] fill-neutral-500">μg/m³</text>
+                        </svg>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-semibold mb-1.5">PM10 懸浮微粒</h3>
+                            <p class="text-xs text-neutral-500 leading-relaxed font-light">刺激呼吸道，容易引發過敏、氣喘症狀</p>
+                        </div>
+                    </div>
+
+                    <!-- O₃ -->
+                    <div class="flex items-center gap-5 lg:gap-6">
+                        <svg viewBox="0 0 100 100" class="w-20 h-20 lg:w-24 lg:h-24 flex-shrink-0">
+                            <circle cx="50" cy="50" r="45" fill="none" stroke="#E5E5E5" stroke-width="2"/>
+                            <circle id="gauge-o3" cx="50" cy="50" r="45" fill="none" stroke="#000000" stroke-width="2"
+                                    stroke-dasharray="283" stroke-dashoffset="283" class="gauge-circle"/>
+                            <text x="50" y="50" text-anchor="middle" class="text-3xl font-light fill-black font-mono" id="gauge-o3-text">--</text>
+                            <text x="50" y="66" text-anchor="middle" class="text-[10px] fill-neutral-500">ppb</text>
+                        </svg>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-semibold mb-1.5">O₃ 臭氧</h3>
+                            <p class="text-xs text-neutral-500 leading-relaxed font-light">濃度高時刺激眼睛呼吸道，易咳嗽胸悶</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- About -->
+            <div class="section-divider pt-8">
+                <h3 class="text-xs uppercase tracking-widest text-neutral-400 mb-4 font-light">關於年輪</h3>
+                <p class="text-sm text-neutral-600 leading-relaxed font-light mb-4">
+                    每一圈年輪代表一小時的空氣品質。中心是現在，外圈是過去。
+                </p>
+                <p class="text-sm text-neutral-600 leading-relaxed font-light mb-6">
+                    圓潤的年輪代表清新的空氣；扭曲的年輪代表污染的痕跡。
+                </p>
+                <p class="text-xs text-neutral-400 font-light">
+                    資料來源：<a href="https://data.moenv.gov.tw" target="_blank" rel="noopener" class="underline hover:text-neutral-600">環境部環境資料開放平臺</a>
+                    <span class="mx-2">·</span>
+                    CC BY 4.0
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden elements for backward compatibility -->
+    <span id="data-aqi" class="hidden"></span>
+    <span id="data-pm25" class="hidden"></span>
+    <span id="data-pm10" class="hidden"></span>
+    <span id="data-o3" class="hidden"></span>
+
+    <!-- Scripts -->
+    <script src="/static/js/noise.js"></script>
+    <script src="/static/js/rings.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

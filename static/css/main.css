@@ -1,0 +1,60 @@
+/**
+ * City Breath - 城市的呼吸
+ * 主要樣式（極簡白色主題）
+ */
+
+/* Canvas 容器 */
+#rings-canvas {
+    display: block;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+}
+
+/* 載入動畫 */
+#loading.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+}
+
+/* 選單樣式 */
+select option {
+    background-color: #ffffff;
+    color: #171717;
+}
+
+select optgroup {
+    font-weight: 600;
+    color: #525252;
+}
+
+/* 滾動條（極簡風格） */
+::-webkit-scrollbar {
+    width: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #d4d4d4;
+    border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a3a3a3;
+}
+
+/* 儀表盤動畫 */
+.gauge-circle {
+    transition: stroke-dashoffset 1s ease-out;
+}
+
+/* 響應式調整 */
+@media (max-width: 1024px) {
+    .divider {
+        border-left: none;
+        border-top: 1px solid #E5E5E5;
+    }
+}
