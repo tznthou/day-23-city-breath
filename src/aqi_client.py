@@ -9,9 +9,13 @@ https://data.moenv.gov.tw
 import json
 import logging
 import time
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 import requests
 import urllib3
+
+# 台灣時區 (UTC+8)
+TW_TZ = timezone(timedelta(hours=8))
 
 # 抑制 SSL 警告（環境部 API 憑證問題 - 見 C01 說明）
 # 注意：政府伺服器憑證有 "Missing Subject Key Identifier" 問題
@@ -176,7 +180,6 @@ class AQIClient:
     def _get_mock_data(self) -> list:
         """模擬資料（無 API Key 時使用）"""
         import random
-        from datetime import datetime
 
         mock_stations = [
             ("臺北", "臺北市"),
@@ -206,7 +209,7 @@ class AQIClient:
                 "no2": str(random.randint(3, 20)),
                 "wind_speed": str(round(random.uniform(0.5, 5), 1)),
                 "wind_direc": str(random.randint(0, 360)),
-                "publishtime": datetime.now().strftime("%Y/%m/%d %H:00:00"),
+                "publishtime": datetime.now(TW_TZ).strftime("%Y/%m/%d %H:00:00"),
                 "longitude": "121.5",
                 "latitude": "25.0",
             })

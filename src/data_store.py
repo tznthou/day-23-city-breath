@@ -10,9 +10,12 @@ import random
 import re
 import shutil
 import tempfile
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
+
+# 台灣時區 (UTC+8)
+TW_TZ = timezone(timedelta(hours=8))
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +97,7 @@ class DataStore:
         # 新增資料（加上時間戳）
         entry = {
             **data,
-            "recorded_at": datetime.now().isoformat()
+            "recorded_at": datetime.now(TW_TZ).isoformat()
         }
 
         # 檢查是否已有相同時間的資料
@@ -107,7 +110,7 @@ class DataStore:
         history.append(entry)
 
         # 只保留最近 N 小時
-        cutoff = datetime.now() - timedelta(hours=MAX_HISTORY_HOURS)
+        cutoff = datetime.now(TW_TZ) - timedelta(hours=MAX_HISTORY_HOURS)
         history = [
             h for h in history
             if self._parse_time(h.get("recorded_at", "")) > cutoff
@@ -131,7 +134,7 @@ class DataStore:
         history = self._load_history(file_path)
 
         # 過濾時間範圍
-        cutoff = datetime.now() - timedelta(hours=hours)
+        cutoff = datetime.now(TW_TZ) - timedelta(hours=hours)
         filtered = [
             h for h in history
             if self._parse_time(h.get("recorded_at", "")) > cutoff
@@ -158,7 +161,7 @@ class DataStore:
         for i in range(hours - existing_count):
             # 從過去往現在填充
             hours_ago = hours - existing_count - i
-            timestamp = datetime.now() - timedelta(hours=hours_ago)
+            timestamp = datetime.now(TW_TZ) - timedelta(hours=hours_ago)
 
             # 模擬 AQI 波動（基於當前值 ±30%）
             variation = random.uniform(-0.3, 0.3)

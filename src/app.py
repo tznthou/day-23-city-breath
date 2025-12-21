@@ -9,8 +9,11 @@ https://data.moenv.gov.tw
 
 import os
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+# 台灣時區 (UTC+8)
+TW_TZ = timezone(timedelta(hours=8))
 
 from flask import Flask, render_template, jsonify, request
 from flask_talisman import Talisman
@@ -191,7 +194,7 @@ def get_aqi():
             return jsonify({
                 "success": True,
                 "data": data,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now(TW_TZ).isoformat()
             })
         return jsonify({"success": False, "error": f"找不到測站: {station}"})
     except Exception as e:
@@ -244,7 +247,7 @@ def health_check():
     """健康檢查"""
     return jsonify({
         "status": "ok",
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": datetime.now(TW_TZ).isoformat(),
         "has_api_key": bool(os.getenv("MOENV_API_KEY"))
     })
 
