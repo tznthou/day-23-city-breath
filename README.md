@@ -247,6 +247,27 @@ DEFAULT_STATION=板橋
 2. 在「Networking」新增網域
 3. 可使用免費的 `.zeabur.app` 子網域
 
+### 常見問題：找不到 main.py
+
+如果部署後看到錯誤：
+
+```
+/app/.venv/bin/python3: can't open file '/app/main.py': [Errno 2] No such file or directory
+```
+
+這是因為 Zeabur 預設會找 `main.py` 作為入口點，而不是讀取 `Procfile`。
+
+**解決方法**：確保專案根目錄有 `main.py`：
+
+```python
+from src.app import app
+
+if __name__ == "__main__":
+    import os
+    port = int(os.getenv("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
+```
+
 ---
 
 ## 隨想

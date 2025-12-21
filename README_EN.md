@@ -219,6 +219,38 @@ This project has undergone a comprehensive Code Review with the following securi
 
 ---
 
+## Deployment
+
+### Deploy to Zeabur
+
+1. Create a new project on [Zeabur](https://zeabur.com/)
+2. Connect your GitHub repository
+3. Set environment variables: `MOENV_API_KEY`, `DEFAULT_STATION`
+4. Configure domain in Networking settings
+
+### Troubleshooting: main.py Not Found
+
+If you see this error after deployment:
+
+```
+/app/.venv/bin/python3: can't open file '/app/main.py': [Errno 2] No such file or directory
+```
+
+Zeabur looks for `main.py` as the entry point by default, ignoring `Procfile`.
+
+**Solution**: Ensure `main.py` exists in project root:
+
+```python
+from src.app import app
+
+if __name__ == "__main__":
+    import os
+    port = int(os.getenv("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
+```
+
+---
+
 ## Reflections
 
 ### Invisible Breath
