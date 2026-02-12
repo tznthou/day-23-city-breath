@@ -86,16 +86,20 @@ class AQIClient:
                 logger.debug(f"回應內容: {response.text[:500]}")
                 return self._get_cached_or_none(cache_key)
 
-            if "records" in data:
+            # 環境部 API v2 回傳格式：直接回傳 list 或包在 {"records": [...]}
+            if isinstance(data, list):
+                records = data
+            elif isinstance(data, dict) and "records" in data:
                 records = data["records"]
-                # 更新快取
-                self._cache[cache_key] = records
-                self._cache_time[cache_key] = time.time()
-                logger.info(f"成功取得 {len(records)} 個測站資料")
-                return records
             else:
-                logger.error(f"API 回應缺少 'records' 欄位: {list(data.keys())}")
+                logger.error(f"非預期的 API 回應格式: {type(data).__name__}")
                 return self._get_cached_or_none(cache_key)
+
+            # 更新快取
+            self._cache[cache_key] = records
+            self._cache_time[cache_key] = time.time()
+            logger.info(f"成功取得 {len(records)} 個測站資料")
+            return records
 
         except requests.Timeout:
             logger.error(f"API 請求超時 ({REQUEST_TIMEOUT}s)")
