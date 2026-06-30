@@ -193,13 +193,11 @@ This project has undergone a comprehensive Code Review with the following securi
 
 | Measure | Description |
 |---------|-------------|
-| CSP Content Security Policy | Flask-Talisman configures script-src, style-src to prevent XSS |
-| Rate Limiting | API throttling (10-30 req/min) prevents abuse |
+| CSP / Rate Limiting / HTTPS | Handled by Zeabur reverse proxy |
 | Path Traversal Protection | Station name regex validation + path containment check |
 | Parameter Validation | All API parameters safely parsed with range checks |
 | Unified Error Handling | Production hides internal error details |
 | XSS Protection | Frontend `escapeHtml()` sanitizes user input |
-| HTTPS Enforcement | Production auto-enables HSTS |
 
 ### Reliability Improvements
 
@@ -221,33 +219,22 @@ This project has undergone a comprehensive Code Review with the following securi
 
 ## Deployment
 
-### Deploy to Zeabur
+### Zeabur (Direct Deploy)
 
-1. Create a new project on [Zeabur](https://zeabur.com/)
-2. Connect your GitHub repository
-3. Set environment variables: `MOENV_API_KEY`, `DEFAULT_STATION`
-4. Configure domain in Networking settings
-
-### Troubleshooting: main.py Not Found
-
-If you see this error after deployment:
-
-```
-/app/.venv/bin/python3: can't open file '/app/main.py': [Errno 2] No such file or directory
+```bash
+# With Zeabur CLI
+npx zeabur@latest deploy
 ```
 
-Zeabur looks for `main.py` as the entry point by default, ignoring `Procfile`.
+Set environment variables:
 
-**Solution**: Ensure `main.py` exists in project root:
-
-```python
-from src.app import app
-
-if __name__ == "__main__":
-    import os
-    port = int(os.getenv("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
 ```
+MOENV_API_KEY=your-api-key
+DEFAULT_STATION=板橋
+```
+
+> Zeabur detects `main.py` as the entry point. `main.py` auto-detects the environment: debug mode on locally, off on Zeabur to save memory.
+> Security (CSP, rate limiting, HTTPS) is handled by Zeabur's reverse proxy — no extra middleware needed in the app.
 
 ---
 
