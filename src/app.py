@@ -16,9 +16,6 @@ from pathlib import Path
 TW_TZ = timezone(timedelta(hours=8))
 
 from flask import Flask, render_template, jsonify, request
-from flask_talisman import Talisman
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from dotenv import load_dotenv
 
 from .aqi_client import AQIClient
@@ -27,8 +24,6 @@ from .data_store import DataStore
 # 載入環境變數
 load_dotenv()
 
-# 環境判斷
-IS_PRODUCTION = os.getenv("FLASK_ENV") == "production"
 IS_DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 
 # 設定日誌
@@ -45,51 +40,6 @@ app = Flask(
     static_folder="../static"
 )
 
-# ============================================================
-# H02: Security Headers (Flask-Talisman)
-# ============================================================
-# CSP 設定：允許 Tailwind CDN 和 Google Fonts
-csp = {
-    'default-src': "'self'",
-    'script-src': [
-        "'self'",
-        'https://cdn.tailwindcss.com',
-        "'unsafe-inline'",  # Tailwind 設定需要
-    ],
-    'style-src': [
-        "'self'",
-        'https://fonts.googleapis.com',
-        "'unsafe-inline'",
-    ],
-    'font-src': [
-        "'self'",
-        'https://fonts.gstatic.com',
-    ],
-    'img-src': "'self' data:",
-    'connect-src': "'self'",
-}
-
-Talisman(
-    app,
-    force_https=IS_PRODUCTION,  # 只在生產環境強制 HTTPS (M09)
-    strict_transport_security=IS_PRODUCTION,
-    strict_transport_security_max_age=31536000 if IS_PRODUCTION else 0,
-    content_security_policy=csp,
-    # 不使用 nonce，因為 Tailwind CDN 需要 inline config
-    frame_options='DENY',
-    x_content_type_options=True,
-    referrer_policy='strict-origin-when-cross-origin',
-)
-
-# ============================================================
-# H04: Rate Limiting (Flask-Limiter)
-# ============================================================
-limiter = Limiter(
-    app=app,
-    key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://",  # 開發環境用記憶體，生產環境可改 Redis
-)
 
 # 初始化客戶端和資料儲存
 aqi_client = AQIClient(api_key=os.getenv("MOENV_API_KEY"))
@@ -126,15 +76,6 @@ def handle_exception(e):
         }), 500
 
 
-@app.errorhandler(429)
-def ratelimit_handler(e):
-    """Rate limit 錯誤處理"""
-    return jsonify({
-        "success": False,
-        "error": "Too many requests. Please try again later."
-    }), 429
-
-
 # ============================================================
 # 路由
 # ============================================================
@@ -151,7 +92,6 @@ def favicon():
 
 
 @app.route("/api/stations")
-@limiter.limit("10 per minute")
 def get_stations():
     """取得所有測站列表"""
     try:
@@ -180,7 +120,6 @@ def get_stations():
 
 
 @app.route("/api/aqi")
-@limiter.limit("30 per minute")
 def get_aqi():
     """取得指定測站的 AQI 資料"""
     station = request.args.get("station", DEFAULT_STATION)
@@ -203,7 +142,6 @@ def get_aqi():
 
 
 @app.route("/api/history")
-@limiter.limit("10 per minute")
 def get_history():
     """取得過去 24 小時的歷史資料"""
     station = request.args.get("station", DEFAULT_STATION)
@@ -242,7 +180,6 @@ def get_history():
 
 
 @app.route("/api/health")
-@limiter.exempt  # 健康檢查不限制
 def health_check():
     """健康檢查"""
     return jsonify({
